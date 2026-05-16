@@ -133,7 +133,7 @@ export default function Paywall() {
             testID="paywall-upgrade"
           >
             {busy || polling ? (
-              <ActivityIndicator color="#04130E" />
+              <ActivityIndicator color="#000000" />
             ) : (
               <Text style={styles.ctaText}>Upgrade to Premium</Text>
             )}
@@ -209,6 +209,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 20,
   },
-  ctaText: { color: "#1A1408", fontSize: 16, fontWeight: "700", letterSpacing: 0.5 },
+  ctaText: { color: "#000000", fontSize: 16, fontWeight: "700", letterSpacing: 0.5 },
   maybe: { color: colors.textMuted, fontSize: 14, textAlign: "center", paddingVertical: 8 },
 });

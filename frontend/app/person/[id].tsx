@@ -224,7 +224,7 @@ export default function PersonDetail() {
             testID="edit-save"
           >
             {busy ? (
-              <ActivityIndicator color="#04130E" />
+              <ActivityIndicator color="#000000" />
             ) : (
               <Text style={styles.saveText}>Save changes</Text>
             )}
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
-  saveText: { color: "#04130E", fontWeight: "700", fontSize: 15 },
+  saveText: { color: "#000000", fontWeight: "700", fontSize: 15 },
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",

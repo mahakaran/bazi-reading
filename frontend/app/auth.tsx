@@ -191,7 +191,7 @@ export default function AuthScreen() {
             testID="auth-submit"
           >
             {busy ? (
-              <ActivityIndicator color="#04130E" />
+              <ActivityIndicator color="#000000" />
             ) : (
               <Text style={styles.submitText}>
                 {mode === "login" ? "Sign in" : "Create account"}
@@ -305,6 +305,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 20,
   },
-  submitText: { color: "#04130E", fontSize: 16, fontWeight: "700" },
+  submitText: { color: "#000000", fontSize: 16, fontWeight: "700" },
   toggle: { color: colors.textMuted, fontSize: 13, textAlign: "center" },
 });

@@ -227,7 +227,7 @@ export default function BirthInput() {
           >
             {busy ? (
               <View style={styles.busyRow}>
-                <ActivityIndicator color="#04130E" />
+                <ActivityIndicator color="#000000" />
                 <Text style={styles.submitText}>  Reading the elements…</Text>
               </View>
             ) : (
@@ -312,5 +312,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
   },
   busyRow: { flexDirection: "row", alignItems: "center" },
-  submitText: { color: "#04130E", fontSize: 16, fontWeight: "700" },
+  submitText: { color: "#000000", fontSize: 16, fontWeight: "700" },
 });

@@ -4,7 +4,7 @@ import { colors } from "@/src/theme";
 
 export const Disclaimer: React.FC<{ style?: any }> = ({ style }) => (
   <View style={[styles.wrap, style]} testID="footer-disclaimer">
-    <Text style={styles.text}>For reflection and entertainment only. Not professional advice.</Text>
+    <Text style={styles.text}>For reflection and entertainment only. Not professional, financial, medical, or psychological advice.</Text>
   </View>
 );
 

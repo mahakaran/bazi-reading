@@ -239,5 +239,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 16,
   },
-  doneText: { color: "#04130E", fontSize: 15, fontWeight: "700" },
+  doneText: { color: "#000000", fontSize: 15, fontWeight: "700" },
 });

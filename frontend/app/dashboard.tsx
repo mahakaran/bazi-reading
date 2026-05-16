@@ -123,7 +123,7 @@ export default function Dashboard() {
               testID="upgrade-btn"
             >
               <Text style={styles.upgradeText}>Upgrade to Premium</Text>
-              <Ionicons name="arrow-forward" size={16} color="#04130E" />
+              <Ionicons name="arrow-forward" size={16} color="#000000" />
             </TouchableOpacity>
           )}
         </View>
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginTop: 18,
   },
-  upgradeText: { color: "#04130E", fontWeight: "700", fontSize: 14 },
+  upgradeText: { color: "#000000", fontWeight: "700", fontSize: 14 },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

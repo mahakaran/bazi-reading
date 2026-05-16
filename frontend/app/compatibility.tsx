@@ -140,7 +140,7 @@ export default function Compatibility() {
                 >
                   <View style={[styles.avatar, selected && styles.avatarSelected]}>
                     <Text
-                      style={[styles.initial, selected && { color: "#04130E" }]}
+                      style={[styles.initial, selected && { color: "#000000" }]}
                     >
                       {order || (p.name || "?")[0].toUpperCase()}
                     </Text>
@@ -174,7 +174,7 @@ export default function Compatibility() {
           testID="compat-generate"
         >
           {busy ? (
-            <ActivityIndicator color="#04130E" />
+            <ActivityIndicator color="#000000" />
           ) : (
             <Text style={styles.ctaText}>Generate Compatibility</Text>
           )}
@@ -274,5 +274,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
-  ctaText: { color: "#04130E", fontSize: 15, fontWeight: "700" },
+  ctaText: { color: "#000000", fontSize: 15, fontWeight: "700" },
 });

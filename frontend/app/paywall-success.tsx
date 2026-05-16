@@ -105,5 +105,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginTop: 16,
   },
-  btnText: { color: "#04130E", fontWeight: "700" },
+  btnText: { color: "#000000", fontWeight: "700" },
 });
