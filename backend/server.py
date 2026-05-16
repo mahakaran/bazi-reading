@@ -390,25 +390,23 @@ async def generate_reading(profile_id: str, user: dict = Depends(current_user)):
     import asyncio
     last_err = None
     text = None
-    for attempt in range(2):
-        try:
-            chat = LlmChat(
-                api_key=EMERGENT_LLM_KEY,
-                session_id=f"reading_{profile_id}_{attempt}",
-                system_message="You are a thoughtful, warm BaZi and I Ching interpretation assistant. Always be reflective and never deterministic.",
-            ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-            response = await asyncio.wait_for(
-                chat.send_message(UserMessage(text=prompt)), timeout=25
-            )
-            text = response if isinstance(response, str) else str(response)
-            break
-        except Exception as e:
-            last_err = e
-            logger.warning("LLM attempt %s failed: %s", attempt + 1, str(e)[:200])
-            if attempt < 1:
-                await asyncio.sleep(2)
+    # Single attempt with a generous timeout (Claude Sonnet 4.5 typically takes 30-45s
+    # for the full structured reading). Ingress kills requests beyond ~60s so we stay under.
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"reading_{profile_id}",
+            system_message="You are a thoughtful, warm BaZi and I Ching interpretation assistant. Always be reflective and never deterministic.",
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        response = await asyncio.wait_for(
+            chat.send_message(UserMessage(text=prompt)), timeout=55
+        )
+        text = response if isinstance(response, str) else str(response)
+    except Exception as e:
+        last_err = e
+        logger.warning("LLM generation failed: %s", str(e)[:300])
     if not text:
-        raise HTTPException(503, f"Reading service temporarily unavailable. Please try again. ({str(last_err)[:160]})")
+        raise HTTPException(503, f"The reading service is busy right now. Please try again in a moment. ({str(last_err)[:160]})")
 
     reading_id = f"rd_{uuid.uuid4().hex[:12]}"
     doc = {
@@ -513,25 +511,21 @@ async def generate_compatibility(req: CompatibilityReq, user: dict = Depends(cur
     import asyncio
     last_err = None
     text = None
-    for attempt in range(2):
-        try:
-            chat = LlmChat(
-                api_key=EMERGENT_LLM_KEY,
-                session_id=f"compat_{req.profile_id_a}_{req.profile_id_b}_{attempt}",
-                system_message="You are a thoughtful, warm BaZi and I Ching relationship interpretation assistant. Always reflective, never deterministic.",
-            ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-            response = await asyncio.wait_for(
-                chat.send_message(UserMessage(text=prompt)), timeout=25
-            )
-            text = response if isinstance(response, str) else str(response)
-            break
-        except Exception as e:
-            last_err = e
-            logger.warning("Compat LLM attempt %s failed: %s", attempt + 1, str(e)[:200])
-            if attempt < 1:
-                await asyncio.sleep(2)
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"compat_{req.profile_id_a}_{req.profile_id_b}",
+            system_message="You are a thoughtful, warm BaZi and I Ching relationship interpretation assistant. Always reflective, never deterministic.",
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        response = await asyncio.wait_for(
+            chat.send_message(UserMessage(text=prompt)), timeout=55
+        )
+        text = response if isinstance(response, str) else str(response)
+    except Exception as e:
+        last_err = e
+        logger.warning("Compat LLM failed: %s", str(e)[:300])
     if not text:
-        raise HTTPException(503, f"Compatibility reading temporarily unavailable. Please try again. ({str(last_err)[:160]})")
+        raise HTTPException(503, f"The reading service is busy right now. Please try again in a moment. ({str(last_err)[:160]})")
 
     reading_id = f"rd_{uuid.uuid4().hex[:12]}"
     snap = lambda p: {

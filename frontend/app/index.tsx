@@ -1,25 +1,57 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedScrollHandler,
+  withTiming,
+  withRepeat,
+  Easing,
+} from "react-native-reanimated";
 import { colors } from "@/src/theme";
 import { Disclaimer } from "@/src/components/Disclaimer";
+import { Bagua } from "@/src/components/Bagua";
 import { useAuth } from "@/src/auth/AuthContext";
 
-const HERO =
-  "https://images.unsplash.com/photo-1505506874110-6a7a69069a08?auto=format&fit=crop&w=1600&q=80";
+const BAGUA_SIZE = 540;
 
 export default function Landing() {
   const router = useRouter();
   const { user, loading } = useAuth();
+
+  // Continuous slow base rotation
+  const baseRot = useSharedValue(0);
+  // Scroll-driven rotation
+  const scrollY = useSharedValue(0);
+  // Initial fade-in for bagua only (initialized visible to avoid web hydration flash)
+  const fadeIn = useSharedValue(1);
+
+  useEffect(() => {
+    fadeIn.value = 0;
+    fadeIn.value = withTiming(1, { duration: 1600, easing: Easing.out(Easing.cubic) });
+    baseRot.value = withRepeat(
+      withTiming(360, { duration: 120000, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, [baseRot, fadeIn]);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollY.value = e.contentOffset.y;
+    },
+  });
+
+  const baguaStyle = useAnimatedStyle(() => {
+    const rotation = baseRot.value + scrollY.value * 0.28;
+    return {
+      opacity: fadeIn.value,
+      transform: [{ rotate: `${rotation}deg` }],
+    };
+  });
 
   const onCTA = () => {
     if (user) router.replace("/dashboard");
@@ -28,21 +60,54 @@ export default function Landing() {
 
   return (
     <View style={styles.root} testID="landing-screen">
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <ImageBackground source={{ uri: HERO }} style={styles.hero} resizeMode="cover">
-          <View style={styles.heroOverlay} />
+      <Animated.ScrollView
+        contentContainerStyle={styles.scroll}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* HERO SECTION with Bagua background */}
+        <View style={styles.hero}>
+          {/* Background gradient wash */}
           <LinearGradient
-            colors={["rgba(7,7,7,0.4)", "rgba(7,7,7,0.85)", colors.bg]}
+            colors={["#0a0a0a", "#070707", colors.bg]}
             style={StyleSheet.absoluteFill}
           />
+
+          {/* Soft radial glow behind bagua */}
+          <View style={styles.glowWrap} pointerEvents="none">
+            <View style={styles.glowOrb} />
+          </View>
+
+          {/* Bagua symbol (animated) */}
+          <Animated.View
+            style={[styles.baguaWrap, baguaStyle]}
+            pointerEvents="none"
+          >
+            <Bagua
+              size={BAGUA_SIZE}
+              color="#FFFFFF"
+              opacity={0.14}
+              glowColor="#A7E8C4"
+            />
+          </Animated.View>
+
+          {/* Bottom fade so headline sits cleanly */}
+          <LinearGradient
+            colors={["transparent", "rgba(7,7,7,0.4)", colors.bg]}
+            style={styles.heroBottomFade}
+            pointerEvents="none"
+          />
+
           <SafeAreaView style={styles.heroInner}>
             <View style={styles.brandRow}>
               <View style={styles.dot} />
               <Text style={styles.brandText}>BaZi · I Ching</Text>
             </View>
           </SafeAreaView>
-        </ImageBackground>
+        </View>
 
+        {/* CONTENT */}
         <View style={styles.content}>
           <Text style={styles.overline}>ANCIENT SYSTEMS · MODERN SELF-UNDERSTANDING</Text>
           <Text style={styles.h1}>
@@ -90,8 +155,9 @@ export default function Landing() {
             <View style={styles.quoteLine} />
           </View>
         </View>
+
         <Disclaimer />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -105,9 +171,48 @@ const Feature: React.FC<{ label: string }> = ({ label }) => (
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingBottom: 24 },
-  hero: { height: 420, justifyContent: "flex-start" },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
-  heroInner: { paddingHorizontal: 24, paddingTop: 8 },
+  hero: {
+    height: 460,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  glowWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  glowOrb: {
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    backgroundColor: "#A7E8C4",
+    opacity: 0.05,
+    transform: [{ scale: 1.4 }],
+  },
+  baguaWrap: {
+    position: "absolute",
+    width: BAGUA_SIZE,
+    height: BAGUA_SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+    top: 60,
+  },
+  heroBottomFade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 160,
+  },
+  heroInner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+  },
   brandRow: { flexDirection: "row", alignItems: "center" },
   dot: {
     width: 6,
@@ -123,7 +228,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     fontWeight: "500",
   },
-  content: { paddingHorizontal: 24, marginTop: -48 },
+  content: { paddingHorizontal: 24, marginTop: -24 },
   overline: {
     color: colors.textMuted,
     fontSize: 10.5,
