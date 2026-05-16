@@ -1,0 +1,98 @@
+{
+  "theme": "dark",
+  "archetype": "5 (Jewel & Luxury)",
+  "emotional_tone": "Elegant, calm, spiritual, minimalist, premium, mystical.",
+  "design_philosophy": "Embrace the void. Let deep black space breathe. Use jade/emerald as light cutting through the darkness. The ancient wisdom of BaZi and I Ching should feel modern, authoritative, and profoundly personal.",
+  "colors": {
+    "background_primary": "#040907",
+    "background_secondary": "#0C1814",
+    "surface_glass": "rgba(12, 24, 20, 0.7)",
+    "primary_accent": "#10B981",
+    "primary_accent_dim": "#047857",
+    "gold_accent": "#D4AF37",
+    "text_primary": "#F9FAFB",
+    "text_secondary": "#A7F3D0",
+    "text_muted": "#6EE7B7",
+    "border_subtle": "#1A2F28",
+    "border_glow": "rgba(16, 185, 129, 0.3)"
+  },
+  "typography": {
+    "heading_font": "Cormorant Garamond, Playfair Display, or native serif equivalent. Should be elegant and authoritative.",
+    "body_font": "Outfit, Manrope, or Inter (light variants). Must be highly legible.",
+    "scale": {
+      "h1": "text-4xl md:text-5xl tracking-tight leading-tight font-serif",
+      "h2": "text-2xl md:text-3xl tracking-tight font-serif text-emerald-50",
+      "h3": "text-xl font-serif text-emerald-100",
+      "overline": "text-xs tracking-[0.2em] uppercase text-emerald-400 font-semibold",
+      "body": "text-base leading-relaxed text-gray-200",
+      "caption": "text-sm text-emerald-200/60"
+    }
+  },
+  "layout_and_spacing": {
+    "container_padding": "px-6 py-8",
+    "section_gap": "gap-12",
+    "card_padding": "p-6",
+    "border_radius": "rounded-2xl",
+    "strategy": "Generous vertical spacing. Let elements breathe. Do not cram inputs together in the Birth Input form. Use full-width cards with inner padding for the Reading Results sections."
+  },
+  "surface_strategies": {
+    "cards": "Dark Jade background (#0C1814) with a 1px solid border (#1A2F28). No harsh shadows, use a soft, diffuse emerald ambient glow only on premium/active elements.",
+    "glassmorphism": "For sticky headers or floating nav bars, use deep black/jade backdrop blur (backdrop-blur-xl bg-[#040907]/80) with a 1px bottom border of white/10.",
+    "buttons_primary": "Solid emerald background, text white. Rounded full (pill shape) for premium feel. Do not use generic square buttons.",
+    "buttons_secondary": "Transparent background, 1px emerald-700 border, emerald text.",
+    "inputs": "Height 56px, fully rounded (rounded-full) or smooth corners (rounded-xl). Background #0C1814, border #1A2F28. Focus state border turns solid emerald (#10B981)."
+  },
+  "components": {
+    "landing_page": {
+      "structure": "Hero image filling top half with gradient fade into background. Bold serif H1. Floating 'Get Your Reading' CTA.",
+      "effects": "Parallax background if possible, soft fade-ins for text."
+    },
+    "birth_input_form": {
+      "structure": "Single column, well-spaced fields. Use clear overline labels. Combine Year/Month/Day creatively or use native date pickers styled in dark mode.",
+      "guidance": "Must not feel like a tax form. It is the beginning of a mystical journey. Use step-by-step or generously padded vertical layout."
+    },
+    "reading_result": {
+      "structure": "Bento-grid inspired or stacked elegant cards. Each section (Five Elements, Career, Health, I Ching) must be its own card with a distinct icon and serif header.",
+      "visuals": "Use the I Ching hexagram image or Element image to break up text."
+    },
+    "paywall": {
+      "structure": "Cinematic. Dark overlay over a mystical background. Large Gold or Emerald CTA to 'Upgrade to Premium'. 'Maybe Later' as subtle text below.",
+      "psychology": "Should feel like unlocking deep secrets, not just buying a subscription."
+    }
+  },
+  "media": {
+    "mystical_jade_background": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/bd21e9a4-6942-4c32-837d-88bb0dd6eb09/images/5f0ad2d1f3ddacdef166948fbc8d45a0cbfcbe4617646a73aa2e9e479baf9a23.png",
+      "description": "Premium pure dark background with soft, ethereal jade green and emerald gradients glowing faintly. Use for Landing Page hero background or Paywall background.",
+      "category": "background"
+    },
+    "five_elements_hero": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/bd21e9a4-6942-4c32-837d-88bb0dd6eb09/images/b825054c9e15296667be8258b8305c7be40538e9697d6cb6c25e78484e55ade9.png",
+      "description": "Abstract 3D geometric representation of Chinese Five Elements in emerald and gold. Use in the Reading Results page under the 'Five Elements balance' section.",
+      "category": "illustration"
+    },
+    "iching_compass": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/bd21e9a4-6942-4c32-837d-88bb0dd6eb09/images/e82e38ff1c401c380b7852bbfc240bab6af8a0a3f35924d0c58fd6ee73026e30.png",
+      "description": "Glowing minimal I Ching hexagram in faint gold. Use in the 'I Ching guidance' section of the Reading Results or as a loading state graphic.",
+      "category": "iconography"
+    },
+    "starry_night_stock": {
+      "url": "https://images.unsplash.com/photo-1599148400620-8e1ff0bf28d8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwxfHxkYXJrJTIwbmlnaHQlMjBzdGFycyUyMG1pbmltYWx8ZW58MHx8fHwxNzc4OTA0ODM5fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Dark night sky. Use as a subtle texture or overlay if needed for dashboard headers.",
+      "category": "texture"
+    }
+  },
+  "testing_attributes": {
+    "rule": "All interactive and key informational elements MUST include a `data-testid` attribute (e.g., `data-testid=\"reading-submit-button\"`).",
+    "convention": "kebab-case, role-based."
+  },
+  "instructions_to_main_agent": [
+    "This is an Expo React Native mobile app utilizing SDK 54 and expo-router. All styling MUST be compatible with NativeWind (or React Native StyleSheet if NativeWind is not available).",
+    "Translate Tailwind guidelines into NativeWind classes or equivalent StyleSheet properties.",
+    "Since it's mobile, rely on ScrollView and SafeAreaView. Use `paddingHorizontal: 24` for standard screen padding.",
+    "Text over gradients/images MUST have high contrast. Use dark overlays over the provided background images if needed.",
+    "Do not use generic 'card' looks. The app must feel like a premium, mystical experience. Use the specified dark emerald/obsidian colors.",
+    "Include the footer disclaimer on all major screens: 'For reflection and entertainment only. Not professional advice.' Give it a muted, small font style.",
+    "Ensure 'data-testid' is added to all buttons, inputs, and major sections."
+  ]
+}
