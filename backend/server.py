@@ -355,7 +355,7 @@ async def generate_reading(profile_id: str, user: dict = Depends(current_user)):
     import asyncio
     last_err = None
     text = None
-    for attempt in range(3):
+    for attempt in range(2):
         try:
             chat = LlmChat(
                 api_key=EMERGENT_LLM_KEY,
@@ -363,15 +363,15 @@ async def generate_reading(profile_id: str, user: dict = Depends(current_user)):
                 system_message="You are a thoughtful, warm BaZi and I Ching interpretation assistant. Always be reflective and never deterministic.",
             ).with_model("anthropic", "claude-sonnet-4-5-20250929")
             response = await asyncio.wait_for(
-                chat.send_message(UserMessage(text=prompt)), timeout=75
+                chat.send_message(UserMessage(text=prompt)), timeout=25
             )
             text = response if isinstance(response, str) else str(response)
             break
         except Exception as e:
             last_err = e
             logger.warning("LLM attempt %s failed: %s", attempt + 1, str(e)[:200])
-            if attempt < 2:
-                await asyncio.sleep(2 * (attempt + 1))
+            if attempt < 1:
+                await asyncio.sleep(2)
     if not text:
         raise HTTPException(503, f"Reading service temporarily unavailable. Please try again. ({str(last_err)[:160]})")
 
