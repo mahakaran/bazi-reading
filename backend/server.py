@@ -73,6 +73,22 @@ class BirthProfileCreate(BaseModel):
     gender: Optional[str] = None
 
 
+class BirthProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    birth_year: Optional[int] = None
+    birth_month: Optional[int] = None
+    birth_day: Optional[int] = None
+    birth_hour: Optional[int] = None
+    birth_minute: Optional[int] = None
+    birthplace: Optional[str] = None
+    gender: Optional[str] = None
+
+
+class CompatibilityReq(BaseModel):
+    profile_id_a: str
+    profile_id_b: str
+
+
 class CheckoutReq(BaseModel):
     origin_url: str
 
@@ -274,6 +290,25 @@ async def delete_profile(profile_id: str, user: dict = Depends(current_user)):
     return {"ok": True}
 
 
+@api.patch("/birth-profiles/{profile_id}")
+async def update_profile(
+    profile_id: str, req: BirthProfileUpdate, user: dict = Depends(current_user)
+):
+    update = {k: v for k, v in req.dict().items() if v is not None}
+    if not update:
+        raise HTTPException(400, "Nothing to update")
+    res = await db.birth_profiles.update_one(
+        {"profile_id": profile_id, "user_id": user["user_id"]}, {"$set": update}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Not found")
+    doc = await db.birth_profiles.find_one(
+        {"profile_id": profile_id, "user_id": user["user_id"]}, {"_id": 0}
+    )
+    return doc
+
+
+
 # ---------- Reading Generation ----------
 READING_PROMPT_TEMPLATE = """You are a thoughtful BaZi (Chinese Four Pillars) and I Ching interpretation assistant. Based on the following birth information, generate a reflective, structured reading. Do not claim certainty or predict unavoidable events. Frame the reading as symbolic, reflective, and for self-awareness.
 
@@ -413,6 +448,109 @@ async def get_reading(reading_id: str, user: dict = Depends(current_user)):
     if not r:
         raise HTTPException(404, "Not found")
     return r
+
+
+COMPATIBILITY_PROMPT = """You are a thoughtful BaZi and I Ching relationship interpretation assistant. Compare these two birth charts and produce a reflective compatibility reading. Frame everything as symbolic and reflective — never deterministic. Always soften negative observations with constructive framing. Do NOT advise major life decisions.
+
+Person A:
+Name: {a_name}
+Date: {a_year}-{a_month:02d}-{a_day:02d}  Time: {a_hour:02d}:{a_minute:02d}  Place: {a_place}
+
+Person B:
+Name: {b_name}
+Date: {b_year}-{b_month:02d}-{b_day:02d}  Time: {b_hour:02d}:{b_minute:02d}  Place: {b_place}
+
+Return the reading in EXACTLY this markdown format, each section title on its own line prefixed with '## ':
+
+## Elemental Harmony
+[2 paragraphs comparing their Five Elements balance and how they may interact]
+
+## Communication Style
+[2 paragraphs on how they may express and listen to each other]
+
+## Emotional Dynamic
+[2 paragraphs on emotional currents between them]
+
+## Strengths of the Relationship
+[Bullet list with 4-6 items starting with '- ']
+
+## Potential Friction
+[Bullet list with 3-5 items, framed constructively, starting with '- ']
+
+## Practical Advice
+[2 short paragraphs of grounded, kind advice]
+
+## Disclaimer
+This compatibility reading is for reflection and self-awareness only. It is not professional, relationship, or life decision advice and should not be used to make major decisions about another person.
+
+Tone: warm, grounded, respectful, non-dogmatic. Use phrases like "this may suggest", "a possible pattern is", "you may want to reflect on".
+"""
+
+
+@api.post("/readings/compatibility")
+async def generate_compatibility(req: CompatibilityReq, user: dict = Depends(current_user)):
+    if not user.get("is_premium"):
+        raise HTTPException(402, "Compatibility readings are a Premium feature.")
+    if req.profile_id_a == req.profile_id_b:
+        raise HTTPException(400, "Please choose two different people.")
+
+    a = await db.birth_profiles.find_one(
+        {"profile_id": req.profile_id_a, "user_id": user["user_id"]}, {"_id": 0}
+    )
+    b = await db.birth_profiles.find_one(
+        {"profile_id": req.profile_id_b, "user_id": user["user_id"]}, {"_id": 0}
+    )
+    if not a or not b:
+        raise HTTPException(404, "One or both birth profiles not found")
+
+    prompt = COMPATIBILITY_PROMPT.format(
+        a_name=a["name"], a_year=a["birth_year"], a_month=a["birth_month"], a_day=a["birth_day"],
+        a_hour=a["birth_hour"], a_minute=a["birth_minute"], a_place=a["birthplace"],
+        b_name=b["name"], b_year=b["birth_year"], b_month=b["birth_month"], b_day=b["birth_day"],
+        b_hour=b["birth_hour"], b_minute=b["birth_minute"], b_place=b["birthplace"],
+    )
+
+    import asyncio
+    last_err = None
+    text = None
+    for attempt in range(2):
+        try:
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"compat_{req.profile_id_a}_{req.profile_id_b}_{attempt}",
+                system_message="You are a thoughtful, warm BaZi and I Ching relationship interpretation assistant. Always reflective, never deterministic.",
+            ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+            response = await asyncio.wait_for(
+                chat.send_message(UserMessage(text=prompt)), timeout=25
+            )
+            text = response if isinstance(response, str) else str(response)
+            break
+        except Exception as e:
+            last_err = e
+            logger.warning("Compat LLM attempt %s failed: %s", attempt + 1, str(e)[:200])
+            if attempt < 1:
+                await asyncio.sleep(2)
+    if not text:
+        raise HTTPException(503, f"Compatibility reading temporarily unavailable. Please try again. ({str(last_err)[:160]})")
+
+    reading_id = f"rd_{uuid.uuid4().hex[:12]}"
+    snap = lambda p: {
+        "profile_id": p["profile_id"], "name": p["name"],
+        "birth_year": p["birth_year"], "birth_month": p["birth_month"], "birth_day": p["birth_day"],
+        "birth_hour": p["birth_hour"], "birth_minute": p["birth_minute"], "birthplace": p["birthplace"],
+    }
+    doc = {
+        "reading_id": reading_id,
+        "user_id": user["user_id"],
+        "reading_type": "compatibility",
+        "generated_text": text,
+        "compatibility_profiles": [snap(a), snap(b)],
+        "created_at": now_utc(),
+    }
+    await db.readings.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
 
 
 # ---------- Stripe Checkout (Subscription) ----------

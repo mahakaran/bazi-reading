@@ -1,0 +1,37 @@
+{
+  "summary": "Backend-only focused test of the two NEW features: (a) PATCH /api/birth-profiles/{profile_id} and (b) POST /api/readings/compatibility, plus DELETE regression with reading cascade. 10/10 pytest cases passed against the public URL. The compatibility happy path actually returned HTTP 200 (not the 503 fallback) with all four required markdown headers, a 2-element compatibility_profiles array, and the new reading appeared in GET /api/readings. No bugs found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_new_features.py",
+    "/app/test_reports/pytest/new_features_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PATCH /birth-profiles/{id} correctly filters {k:v for v is not None}, returns 400 on empty diff, and owner-scopes both the update_one() match and the post-update find_one() — so non-owners cleanly get 404. Good.",
+    "DELETE /birth-profiles/{id} cascades db.readings.delete_many({birth_profile_id: profile_id}) AFTER successful owner-scoped delete — verified with a seeded reading: 1 → 0 after DELETE.",
+    "POST /readings/compatibility ordering of guards is correct: premium gate (402) → same-profile (400) → existence check (404) → LLM call → 503 fallback. The 503 path is exercised in code via the same retry-with-asyncio.wait_for pattern as generate_reading.",
+    "Both new endpoints exclude MongoDB _id via projection ({_id:0}) — no serialization issues.",
+    "Compatibility reading is stored without birth_profile_id (uses compatibility_profiles snapshot array instead), so it correctly survives if either source profile is later deleted — design consistent with the cascade rule for single-profile readings."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_new_features.py (created — covers all 10 scenarios for the new features)"
+  ],
+  "success_rate": {
+    "backend": "10/10 (100%): PATCH update partial=PASS, PATCH empty=400 PASS, PATCH non-owner=404 PASS, PATCH unknown=404 PASS, DELETE+cascade=PASS, DELETE unknown=404 PASS, compat free 402 PASS (detail string 'Compatibility readings are a Premium feature.' matched), compat same-profile 400 PASS, compat unknown profile 404 PASS, compat premium 200 PASS with all required markdown headers and compatibility_profiles[2] and appears in GET /readings.",
+    "frontend": "N/A (skipped per request)"
+  },
+  "seed_data_creation": "Created TEST_patch_a_*, TEST_patch_b_*, TEST_delete_*, TEST_compat_free_*, TEST_compat_prem_* users with isolated profiles. teardown_class deletes their users + birth_profiles + readings from Mongo. Premium toggle done directly via db.users.update_one as instructed. Seed users test@bazi.app and stripe@bazi.app untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_new_features.py is the canonical regression file for these two features. It uses both the public URL (for HTTP behavior) and direct Mongo (for premium toggle, cascade verification, and cleanup). The compatibility happy-path test takes ~30s (one LLM call). It tolerates a 503 via pytest.skip but during this run it actually returned 200 — confirming the LLM path is live. If main agent later adds a GET /birth-profiles/{id} single-fetch endpoint, the patch verification can be tightened to use it instead of scanning the list.",
+  "rca_of_issue": "No bugs. Implementation matches spec: PATCH partial-update with owner isolation + 400 on empty + 404 on miss; DELETE with cascade; compatibility endpoint gated by is_premium with 402 detail string exactly as required, plus 400 for same-profile and 404 for unknown profile, and a well-formed 200 payload (reading_type='compatibility', generated_text containing '## Elemental Harmony', '## Communication Style', '## Strengths of the Relationship', '## Disclaimer', and compatibility_profiles array of length 2 with name/birth_year/birth_month/birth_day fields)."
+}

@@ -49,6 +49,13 @@ const SECTION_ICONS: Record<string, string> = {
   "I Ching Guidance": "compass-outline",
   "Practical Reflection Questions": "help-circle-outline",
   "Disclaimer": "information-circle-outline",
+  // Compatibility sections
+  "Elemental Harmony": "leaf-outline",
+  "Communication Style": "chatbubbles-outline",
+  "Emotional Dynamic": "heart-outline",
+  "Strengths of the Relationship": "flash-outline",
+  "Potential Friction": "trending-up-outline",
+  "Practical Advice": "compass-outline",
 };
 
 export default function ReadingResult() {
@@ -86,6 +93,8 @@ export default function ReadingResult() {
   }
 
   const sections = parseSections(reading.generated_text || "");
+  const isCompat = reading.reading_type === "compatibility";
+  const compatProfiles = reading.compatibility_profiles || [];
   const snap = reading.profile_snapshot || {};
 
   return (
@@ -101,15 +110,36 @@ export default function ReadingResult() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.overline}>YOUR READING</Text>
-        <Text style={styles.h1}>{snap.name}</Text>
-        <Text style={styles.meta}>
-          {snap.birth_year}-{String(snap.birth_month).padStart(2, "0")}-
-          {String(snap.birth_day).padStart(2, "0")} ·{" "}
-          {String(snap.birth_hour).padStart(2, "0")}:
-          {String(snap.birth_minute).padStart(2, "0")}
-          {snap.birthplace ? ` · ${snap.birthplace}` : ""}
+        <Text style={styles.overline}>
+          {isCompat ? "COMPATIBILITY READING" : "YOUR READING"}
         </Text>
+        {isCompat ? (
+          <>
+            <Text style={styles.h1}>
+              {compatProfiles[0]?.name} <Text style={styles.amp}>×</Text>{" "}
+              {compatProfiles[1]?.name}
+            </Text>
+            <Text style={styles.meta}>
+              {compatProfiles
+                .map(
+                  (p: any) =>
+                    `${p.name}: ${p.birth_year}-${String(p.birth_month).padStart(2, "0")}-${String(p.birth_day).padStart(2, "0")}`
+                )
+                .join("  ·  ")}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.h1}>{snap.name}</Text>
+            <Text style={styles.meta}>
+              {snap.birth_year}-{String(snap.birth_month).padStart(2, "0")}-
+              {String(snap.birth_day).padStart(2, "0")} ·{" "}
+              {String(snap.birth_hour).padStart(2, "0")}:
+              {String(snap.birth_minute).padStart(2, "0")}
+              {snap.birthplace ? ` · ${snap.birthplace}` : ""}
+            </Text>
+          </>
+        )}
 
         {sections.map((s, idx) => {
           const icon = SECTION_ICONS[s.title] || "ellipse-outline";
@@ -174,6 +204,7 @@ const styles = StyleSheet.create({
   },
   h1: { color: colors.textPrimary, fontSize: 36, fontWeight: "300", marginBottom: 6 },
   meta: { color: colors.textMuted, fontSize: 13, marginBottom: 28 },
+  amp: { color: colors.emerald, fontWeight: "300" },
   sectionCard: {
     backgroundColor: colors.bgSecondary,
     borderColor: colors.border,

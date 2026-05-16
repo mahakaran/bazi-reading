@@ -148,7 +148,13 @@ export default function Dashboard() {
           </TouchableOpacity>
         ) : (
           profiles.map((p) => (
-            <View key={p.profile_id} style={styles.personRow} testID={`person-${p.profile_id}`}>
+            <TouchableOpacity
+              key={p.profile_id}
+              style={styles.personRow}
+              onPress={() => router.push(`/person/${p.profile_id}`)}
+              testID={`person-${p.profile_id}`}
+              activeOpacity={0.7}
+            >
               <View style={styles.personAvatar}>
                 <Text style={styles.personInitial}>{(p.name || "?")[0].toUpperCase()}</Text>
               </View>
@@ -159,8 +165,38 @@ export default function Dashboard() {
                   {String(p.birth_day).padStart(2, "0")} · {p.birthplace}
                 </Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
           ))
+        )}
+
+        {/* Compatibility CTA */}
+        {profiles.length >= 1 && (
+          <TouchableOpacity
+            style={[styles.compatCard, !user.is_premium && styles.compatCardLocked]}
+            onPress={() => router.push("/compatibility")}
+            testID="compatibility-cta"
+            activeOpacity={0.85}
+          >
+            <View style={styles.compatIcon}>
+              <Ionicons
+                name={user.is_premium ? "heart" : "lock-closed"}
+                size={18}
+                color={user.is_premium ? colors.emerald : colors.gold}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.compatTitle}>
+                {user.is_premium ? "Compatibility reading" : "Unlock compatibility"}
+              </Text>
+              <Text style={styles.compatSub}>
+                {user.is_premium
+                  ? "Compare two people's elemental harmony."
+                  : "Premium — see how two people relate energetically."}
+              </Text>
+            </View>
+            <Ionicons name="arrow-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
         )}
 
         {/* Readings */}
@@ -174,24 +210,30 @@ export default function Dashboard() {
         {readings.length === 0 ? (
           <Text style={styles.emptyText}>Your readings will appear here.</Text>
         ) : (
-          readings.map((r) => (
-            <TouchableOpacity
-              key={r.reading_id}
-              style={styles.readingRow}
-              onPress={() => router.push(`/reading/${r.reading_id}`)}
-              testID={`reading-${r.reading_id}`}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.readingName}>
-                  {r.profile_snapshot?.name || "Reading"}
-                </Text>
-                <Text style={styles.readingDate}>
-                  {new Date(r.created_at).toLocaleDateString()} · BaZi & I Ching
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          ))
+          readings.map((r) => {
+            const isCompat = r.reading_type === "compatibility";
+            const compatProfiles = r.compatibility_profiles || [];
+            const title = isCompat
+              ? `${compatProfiles[0]?.name || "?"} × ${compatProfiles[1]?.name || "?"}`
+              : r.profile_snapshot?.name || "Reading";
+            const subtitle = isCompat ? "Compatibility reading" : "BaZi & I Ching";
+            return (
+              <TouchableOpacity
+                key={r.reading_id}
+                style={styles.readingRow}
+                onPress={() => router.push(`/reading/${r.reading_id}`)}
+                testID={`reading-${r.reading_id}`}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.readingName}>{title}</Text>
+                  <Text style={styles.readingDate}>
+                    {new Date(r.created_at).toLocaleDateString()} · {subtitle}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            );
+          })
         )}
 
         <Disclaimer />
@@ -306,4 +348,28 @@ const styles = StyleSheet.create({
   },
   readingName: { color: colors.textPrimary, fontSize: 15, fontWeight: "500" },
   readingDate: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
+  compatCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: colors.bgSecondary,
+    borderColor: colors.borderGlow,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 8,
+  },
+  compatCardLocked: { borderColor: "rgba(212,175,55,0.3)" },
+  compatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(16,185,129,0.12)",
+    borderWidth: 1,
+    borderColor: colors.borderGlow,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  compatTitle: { color: colors.textPrimary, fontSize: 15, fontWeight: "500" },
+  compatSub: { color: colors.textMuted, fontSize: 12, marginTop: 3 },
 });
