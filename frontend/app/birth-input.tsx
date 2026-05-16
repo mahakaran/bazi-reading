@@ -116,7 +116,7 @@ export default function BirthInput() {
               value={name}
               onChangeText={setName}
               placeholder="e.g., Lin"
-              placeholderTextColor="rgba(167, 243, 208, 0.4)"
+              placeholderTextColor="rgba(212, 212, 212, 0.4)"
               style={styles.input}
               autoCapitalize="words"
               testID="bp-name"
@@ -129,7 +129,7 @@ export default function BirthInput() {
                 value={year}
                 onChangeText={setYear}
                 placeholder="YYYY"
-                placeholderTextColor="rgba(167, 243, 208, 0.4)"
+                placeholderTextColor="rgba(212, 212, 212, 0.4)"
                 style={[styles.input, styles.flex2]}
                 keyboardType="number-pad"
                 maxLength={4}
@@ -139,7 +139,7 @@ export default function BirthInput() {
                 value={month}
                 onChangeText={setMonth}
                 placeholder="MM"
-                placeholderTextColor="rgba(167, 243, 208, 0.4)"
+                placeholderTextColor="rgba(212, 212, 212, 0.4)"
                 style={[styles.input, styles.flex1]}
                 keyboardType="number-pad"
                 maxLength={2}
@@ -149,7 +149,7 @@ export default function BirthInput() {
                 value={day}
                 onChangeText={setDay}
                 placeholder="DD"
-                placeholderTextColor="rgba(167, 243, 208, 0.4)"
+                placeholderTextColor="rgba(212, 212, 212, 0.4)"
                 style={[styles.input, styles.flex1]}
                 keyboardType="number-pad"
                 maxLength={2}
@@ -164,7 +164,7 @@ export default function BirthInput() {
                 value={hour}
                 onChangeText={setHour}
                 placeholder="HH"
-                placeholderTextColor="rgba(167, 243, 208, 0.4)"
+                placeholderTextColor="rgba(212, 212, 212, 0.4)"
                 style={[styles.input, styles.flex1]}
                 keyboardType="number-pad"
                 maxLength={2}
@@ -174,7 +174,7 @@ export default function BirthInput() {
                 value={minute}
                 onChangeText={setMinute}
                 placeholder="MM"
-                placeholderTextColor="rgba(167, 243, 208, 0.4)"
+                placeholderTextColor="rgba(212, 212, 212, 0.4)"
                 style={[styles.input, styles.flex1]}
                 keyboardType="number-pad"
                 maxLength={2}
@@ -188,7 +188,7 @@ export default function BirthInput() {
               value={birthplace}
               onChangeText={setBirthplace}
               placeholder="City, Country"
-              placeholderTextColor="rgba(167, 243, 208, 0.4)"
+              placeholderTextColor="rgba(212, 212, 212, 0.4)"
               style={styles.input}
               testID="bp-place"
             />

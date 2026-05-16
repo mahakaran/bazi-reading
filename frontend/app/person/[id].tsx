@@ -23,7 +23,9 @@ export default function PersonDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [readings, setReadings] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -39,7 +41,10 @@ export default function PersonDetail() {
     if (!id || !token) return;
     (async () => {
       try {
-        const list = await apiFetch(token, "/birth-profiles");
+        const [list, allReadings] = await Promise.all([
+          apiFetch(token, "/birth-profiles"),
+          apiFetch(token, "/readings"),
+        ]);
         const p = (list || []).find((x: any) => x.profile_id === id);
         if (p) {
           setProfile(p);
@@ -52,11 +57,33 @@ export default function PersonDetail() {
           setBirthplace(p.birthplace || "");
           setGender(p.gender || "");
         }
+        const rs = (allReadings || []).filter(
+          (r: any) => r.birth_profile_id === id && r.reading_type === "bazi_iching"
+        );
+        setReadings(rs);
       } catch (e: any) {
         setErr(e.message || "Failed to load");
       }
     })();
   }, [id, token]);
+
+  const onGenerate = async () => {
+    setErr(null);
+    setGenerating(true);
+    try {
+      const reading = await apiFetch(token, `/readings/generate/${id}`, {
+        method: "POST",
+      });
+      router.replace(`/reading/${reading.reading_id}`);
+    } catch (e: any) {
+      if (e.status === 402) {
+        router.replace("/paywall");
+        return;
+      }
+      setErr(e.message || "Failed to generate reading");
+      setGenerating(false);
+    }
+  };
 
   const onSave = async () => {
     setErr(null);
@@ -141,8 +168,69 @@ export default function PersonDetail() {
             <Ionicons name="chevron-back" size={22} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <Text style={styles.overline}>EDIT PERSON</Text>
+          <Text style={styles.overline}>BIRTH PROFILE</Text>
           <Text style={styles.h1}>{profile.name}</Text>
+
+          {/* Reading action card */}
+          <View style={styles.readingCard}>
+            {readings.length > 0 ? (
+              <>
+                <Text style={styles.readingLabel}>LATEST READING</Text>
+                <Text style={styles.readingDate}>
+                  {new Date(readings[0].created_at).toLocaleDateString()}
+                </Text>
+                <View style={styles.readingActions}>
+                  <TouchableOpacity
+                    style={styles.viewBtn}
+                    onPress={() => router.push(`/reading/${readings[0].reading_id}`)}
+                    testID="view-reading-btn"
+                  >
+                    <Ionicons name="book-outline" size={16} color={colors.textPrimary} />
+                    <Text style={styles.viewBtnText}>View Reading</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.regenBtn}
+                    onPress={onGenerate}
+                    disabled={generating}
+                    testID="regenerate-reading-btn"
+                  >
+                    {generating ? (
+                      <ActivityIndicator color={colors.textPrimary} size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="refresh" size={14} color={colors.textMuted} />
+                        <Text style={styles.regenText}>Regenerate</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.readingLabel}>NO READING YET</Text>
+                <Text style={styles.readingDate}>
+                  Generate a personalised BaZi & I Ching reading for {profile.name}.
+                </Text>
+                <TouchableOpacity
+                  style={styles.generateBtn}
+                  onPress={onGenerate}
+                  disabled={generating}
+                  testID="generate-reading-btn"
+                >
+                  {generating ? (
+                    <View style={styles.busyRow}>
+                      <ActivityIndicator color="#000000" size="small" />
+                      <Text style={styles.generateText}>  Reading the elements…</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.generateText}>Generate Reading</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+
+          <Text style={styles.sectionLabel}>EDIT DETAILS</Text>
 
           <Field label="Name">
             <TextInput
@@ -150,7 +238,7 @@ export default function PersonDetail() {
               onChangeText={setName}
               style={styles.input}
               testID="edit-name"
-              placeholderTextColor="rgba(167, 243, 208, 0.4)"
+              placeholderTextColor="rgba(212, 212, 212, 0.4)"
             />
           </Field>
           <Field label="Date of Birth">
@@ -207,7 +295,7 @@ export default function PersonDetail() {
               onChangeText={setBirthplace}
               style={styles.input}
               testID="edit-birthplace"
-              placeholderTextColor="rgba(167, 243, 208, 0.4)"
+              placeholderTextColor="rgba(212, 212, 212, 0.4)"
             />
           </Field>
 
@@ -267,8 +355,65 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgSecondary,
     marginBottom: 24,
   },
-  overline: { color: colors.emerald, fontSize: 11, letterSpacing: 3, fontWeight: "600", marginBottom: 12 },
-  h1: { color: colors.textPrimary, fontSize: 32, fontWeight: "300", marginBottom: 24 },
+  overline: { color: colors.textMuted, fontSize: 11, letterSpacing: 3, fontWeight: "600", marginBottom: 12 },
+  h1: { color: colors.textPrimary, fontSize: 32, fontWeight: "300", marginBottom: 20 },
+  readingCard: {
+    backgroundColor: colors.bgSecondary,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 28,
+  },
+  readingLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    letterSpacing: 2,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  readingDate: { color: colors.textSecondary, fontSize: 14, marginBottom: 16, lineHeight: 22 },
+  readingActions: { flexDirection: "row", gap: 10 },
+  viewBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  viewBtnText: { color: colors.textPrimary, fontSize: 13, fontWeight: "600" },
+  regenBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  regenText: { color: colors.textMuted, fontSize: 12, fontWeight: "500" },
+  generateBtn: {
+    backgroundColor: colors.textPrimary,
+    paddingVertical: 14,
+    borderRadius: 999,
+    alignItems: "center",
+  },
+  generateText: { color: "#000000", fontSize: 14, fontWeight: "600" },
+  busyRow: { flexDirection: "row", alignItems: "center" },
+  sectionLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    letterSpacing: 2,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
   field: { marginBottom: 20 },
   label: {
     color: colors.textMuted,

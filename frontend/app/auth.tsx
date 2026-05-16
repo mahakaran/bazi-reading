@@ -225,7 +225,7 @@ function extractFromFragment(url: string): string | null {
 
 const Input: React.FC<any> = (props) => (
   <TextInput
-    placeholderTextColor="rgba(167, 243, 208, 0.4)"
+    placeholderTextColor="rgba(212, 212, 212, 0.4)"
     style={styles.input}
     {...props}
   />
