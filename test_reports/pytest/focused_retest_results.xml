@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="1" tests="6" time="183.458" timestamp="2026-05-16T06:35:19.059390+00:00" hostname="agent-env-9075c2e0-ceb4-4885-986b-2ac85473f3ff"><testcase classname="backend.tests.test_focused_retest" name="test_fix1_reading_generation_succeeds_or_503" time="62.770"><failure message="AssertionError: Expected 200 (success) or 503 (graceful). Got 502: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 in (200, 503)&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_focused_retest.py:50: in test_fix1_reading_generation_succeeds_or_503
+    assert r.status_code in (200, 503), (
+E   AssertionError: Expected 200 (success) or 503 (graceful). Got 502: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 in (200, 503)
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_focused_retest" name="test_fix1_reading_status_never_500" time="0.000"><skipped type="pytest.skip" message="Prior reading not generated (likely upstream 503); cannot test quota gate.">/app/backend/tests/test_focused_retest.py:91: Prior reading not generated (likely upstream 503); cannot test quota gate.</skipped></testcase><testcase classname="backend.tests.test_focused_retest" name="test_fix2_stripe_login_and_create_session" time="60.307"><failure message="AssertionError: The preview environment is not responding. It may be starting up.&#10;  &#10;assert 502 == 200&#10; +  where 502 = &lt;Response [502]&gt;.status_code">backend/tests/test_focused_retest.py:100: in test_fix2_stripe_login_and_create_session
+    assert r.status_code == 200, r.text
+E   AssertionError: The preview environment is not responding. It may be starting up.
+E     
+E   assert 502 == 200
+E    +  where 502 = &lt;Response [502]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_focused_retest" name="test_fix2_stripe_poll_returns_200_even_when_proxy_404s" time="0.000"><failure message="AssertionError: Pre-req: session creation must succeed&#10;assert (None)">backend/tests/test_focused_retest.py:120: in test_fix2_stripe_poll_returns_200_even_when_proxy_404s
+    assert token and sid, "Pre-req: session creation must succeed"
+E   AssertionError: Pre-req: session creation must succeed
+E   assert (None)</failure></testcase><testcase classname="backend.tests.test_focused_retest" name="test_fix2_stripe_poll_unknown_session_owned_by_other_user_returns_404" time="0.000"><failure message="assert None">backend/tests/test_focused_retest.py:144: in test_fix2_stripe_poll_unknown_session_owned_by_other_user_returns_404
+    assert token
+E   assert None</failure></testcase><testcase classname="backend.tests.test_focused_retest" name="test_zzz_cleanup" time="60.322" /></testsuite></testsuites>

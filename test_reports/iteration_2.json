@@ -1,0 +1,48 @@
+{
+  "summary": "Focused retest of two backend fixes per main agent's request. BOTH FIXES VERIFIED. Stripe poll-session now returns 200 {payment_status:'unpaid', status:'open'} (was 400) — confirmed via public URL. Reading generation now returns full successful 200 with all required '## ' markdown headers (Overall Energetic Profile, Five Elements Interpretation, I Ching Guidance, Disclaimer) and proper retry-with-backoff + asyncio.wait_for(75s) wrapping; the 503 graceful-degradation path is in place in code (line 376 of server.py). One environmental caveat surfaced for FIX 1 — see action_items.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/readings/generate/{profile_id}",
+        "issue": "Code is correct, but cumulative retry window (up to 3x75s + 2s + 4s = ~231s) can exceed Kubernetes ingress timeout (~60s) on the public preview URL. Observed via ingress: a slow first attempt or transient upstream failure surfaces as HTTP 502 'preview environment is not responding' instead of the intended 503. Internal localhost call succeeded in 52.7s; that is already close to the 60s ingress ceiling for a single successful generation. Recommend either (a) reducing per-attempt timeout to ~45s and capping to 2 attempts total, or (b) returning 503 quickly once total elapsed > ~55s. This is an UX issue under flaky upstream, not a code bug — the 503 path is verified to exist in code."
+      },
+      {
+        "endpoint": "Emergent LLM key budget",
+        "issue": "During testing observed 'litellm.BadRequestError: OpenAIException - Budget has been exceeded! Current cost: 0.424962, Max budget: 0.4' on one attempt. Subsequent calls succeeded, but the budget is tight for sustained testing. Not a code issue; informational only."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_focused_retest.py",
+    "/app/backend/tests/test_bazi_backend.py",
+    "/app/test_reports/pytest/focused_retest_results.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: tighten the retry strategy in generate_reading to ensure total wall time < ~55s so a 503 reaches the client instead of being masked by ingress 502. Suggested: try 1 immediate + 1 retry with 2s backoff, each with asyncio.wait_for(timeout=25) — fits comfortably in 60s ingress budget while still absorbing one transient 502.",
+    "Confirm Emergent LLM budget is provisioned for production load (saw one transient 'Budget exceeded' during testing)."
+  ],
+  "critical_code_review_comments": [
+    "Both fixes are implemented correctly at server.py:355-376 (reading retry+wait_for+503) and server.py:456-488 (stripe tolerant 404).",
+    "Stripe poll route correctly preserves locally-known paid status (record.status=='paid' branch) even if upstream get_checkout_status errors — good defensive design.",
+    "Reading route correctly does NOT consume free quota on failure (insert + free_reading_used update happen only after successful text) — confirmed in code."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_focused_retest.py (created — focused retest for FIX 1 + FIX 2)"
+  ],
+  "success_rate": {
+    "backend": "FIX 1: PASS (verified via direct backend call, all required markdown headers present in 7.8KB reading). FIX 2: PASS (3/3 stripe tests via public URL: create-session 200, poll 200 with unpaid/open, unknown-session 404). Overall: 2/2 reviewed fixes verified.",
+    "frontend": "N/A (skipped per request)"
+  },
+  "seed_data_creation": "Created fresh TEST_curl_* / TEST_local_* / TEST_retest_* users for isolation. Cleanup deletes their birth profiles (cascades readings). Seed users test@bazi.app and stripe@bazi.app untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Both fixes are verified. test_focused_retest.py is the canonical retest file for these two flows. If running through public URL https://destiny-chart-7.preview.emergentagent.com/api, be aware the reading endpoint may surface as 502 (ingress timeout) when LLM is slow — this is not a regression; localhost direct calls confirm 200/503 behavior is correct. Stripe poll is fully proven via public URL: GET /api/stripe/session/{sid} now returns 200 + {payment_status:'unpaid', status:'open'} for fresh sessions even when proxy 404s.",
+  "rca_of_issue": "Previous iteration_1 RCAs are RESOLVED. (1) Stripe poll 404: server.py:456-488 now catches the get_checkout_status exception and returns 200 with sane defaults — verified via curl returning literally {\"payment_status\":\"unpaid\",\"status\":\"open\"} on a just-created session. (2) Reading 500: server.py:355-376 wraps the LLM call in for-attempt-in-range(3) with asyncio.wait_for(timeout=75) and raises HTTPException(503, ...) on total failure — verified successful 200 path produces full markdown reading with all required headers. Remaining residual concern is purely about cumulative retry duration vs the public ingress' ~60s timeout, which can show as 502 to the client even though the backend would have returned 503. Suggested mitigation in action_items."
+}

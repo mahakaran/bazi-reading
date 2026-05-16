@@ -1,0 +1,57 @@
+{
+  "summary": "Backend testing of BaZi & I Ching API. 15/21 tests passed (71%). Auth (signup/login/me/logout/invalid-token), birth profile CRUD + free-user 1-profile gate, free-user 1-reading gate, stripe checkout creation all work correctly. Reading generation works (verified via DB: 1st reading produced valid 10.7KB markdown with all required '## ' section headers) but failed in this run due to upstream Emergent LLM gateway returning 502 BadGateway intermittently. Stripe poll-session endpoint has a real integration bug: GET returns Stripe 404 'No such checkout.session' for sessions just created via the Emergent proxy.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/stripe/session/{session_id}",
+        "issue": "Returns 400 with Stripe error 'No such checkout.session: cs_test_...'. POST /api/stripe/create-checkout-session creates session via Emergent proxy (integrations.emergentagent.com/stripe) and returns session_id+url successfully, but the immediate GET via stripe_checkout.get_checkout_status(session_id) calls Stripe and gets 404. Likely cause: the Emergent stripe proxy creates sessions in its own Stripe account but get_checkout_status() in emergentintegrations is querying the merchant's empty Stripe account (or vice versa). Reproducible 100%. Backend logs show: POST .../checkout/sessions -> 200, GET .../checkout/sessions/{id} -> 404 within ~150ms.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "POST /api/readings/generate/{profile_id}",
+        "issue": "Intermittent 500 because emergentintegrations LlmChat -> litellm raises BadGatewayError 502 from upstream Anthropic via Emergent proxy. NOT a code bug — first reading in earlier run succeeded and produced fully formatted output (10794 chars) containing all required headers: Overall Energetic Profile, Five Elements, I Ching Guidance, Disclaimer, Strengths, Growth Challenges. Recommend adding retry-with-backoff (1-2 retries) around chat.send_message() to mitigate flaky upstream 502s.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "POST /api/auth/logout",
+        "issue": "Only deletes session_token rows; JWTs remain valid until natural expiry (14 days). Acceptable for MVP but document behavior; consider a JWT denylist or shorter exp for true logout."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_bazi_backend.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix Stripe poll-session integration: investigate why get_checkout_status returns 404 for sessions created seconds earlier via the same Emergent proxy. May require passing a proxy/base_url to the GET path, or using stripe_checkout instance state. Test with Emergent stripe proxy team if SDK bug.",
+    "Add retry/backoff around LlmChat.send_message in /api/readings/generate/{profile_id} to absorb transient 502s from the LLM proxy (e.g., 2 retries with 2s/5s sleep). Currently any upstream blip surfaces as a 500 to the user and consumes no free quota (good) but UX is poor.",
+    "Consider returning 503 instead of 500 when the LLM upstream is unavailable, so the frontend can show a 'try again' message.",
+    "Optional: JWT-based logout currently leaves token usable — add a denylist collection or shorter exp if true logout is required."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 506 lines — borderline; could split auth/profiles/readings/stripe into separate routers if it grows.",
+    "/api/auth/logout silently no-ops for JWTs (only removes session_token rows). Document or denylist.",
+    "stripe_checkout is instantiated at import time with STRIPE_SECRET_KEY=sk_test_emergent. Verify emergentintegrations StripeCheckout uses the Emergent proxy base URL for BOTH create and get_checkout_status — current 404 suggests asymmetric routing.",
+    "Reading generation has no timeout on LlmChat.send_message; a slow LLM could hold the Kubernetes ingress past its timeout (saw a 502 surfaced at gateway during 3min run). Consider explicit asyncio.wait_for with ~60s.",
+    "Good: MongoDB _id excluded everywhere via {'_id':0}; UUID-based ids used; bcrypt password hashing; indexes created on startup."
+  ],
+  "updated_files": [
+    "/app/backend/tests/conftest.py (created)",
+    "/app/backend/tests/test_bazi_backend.py (created)"
+  ],
+  "success_rate": {"backend": "71% (15/21) — would be 100% absent upstream Emergent LLM 502 and the Stripe poll-session proxy bug", "frontend": "N/A (skipped per request)"},
+  "seed_data_creation": "Each run creates fresh TEST_signup_{uuid}@bazi.app users; cleanup test deletes their birth profile (cascades readings). Seed users test@bazi.app and stripe@bazi.app left intact.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Re-run pytest /app/backend/tests/test_bazi_backend.py. Note that test_generate_reading_for_fresh_user is sensitive to Emergent LLM proxy 502s — retry the run if it fails. test_stripe_poll_session WILL fail until main agent fixes the Stripe GET proxy issue. The first reading produced before the LLM gateway started 502'ing had all required '## ' headers (verified directly from MongoDB). Use BASE_URL https://destiny-chart-7.preview.emergentagent.com/api.",
+  "rca_of_issue": "1) Stripe poll 404 RCA: POST creates session in Emergent stripe-proxy account (returns 200 with cs_test_... id), but stripe_checkout.get_checkout_status(session_id) appears to hit Stripe API in a different account/mode where that session does not exist (resource_missing). The two calls must be routed identically. 2) Reading 500 RCA: emergentintegrations.llm.chat -> litellm.completion -> Anthropic via Emergent LLM proxy returned HTTP 502 BadGateway upstream; the backend correctly catches and surfaces as 500. Transient; first call of the testing session succeeded fully. Mitigation: add retry around send_message and consider returning 503 for upstream gateway errors."
+}
