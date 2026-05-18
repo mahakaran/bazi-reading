@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/src/theme";
 import { apiFetch, useAuth } from "@/src/auth/AuthContext";
 import { Disclaimer } from "@/src/components/Disclaimer";
+import { FeedbackButton } from "@/src/components/FeedbackButton";
 
 const HEX = "https://static.prod-images.emergentagent.com/jobs/bd21e9a4-6942-4c32-837d-88bb0dd6eb09/images/e82e38ff1c401c380b7852bbfc240bab6af8a0a3f35924d0c58fd6ee73026e30.png";
 
@@ -235,6 +236,8 @@ export default function Dashboard() {
             );
           })
         )}
+
+        <FeedbackButton context="dashboard" />
 
         <Disclaimer />
       </ScrollView>

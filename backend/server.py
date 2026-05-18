@@ -93,6 +93,13 @@ class CheckoutReq(BaseModel):
     origin_url: str
 
 
+class FeedbackReq(BaseModel):
+    rating: int = Field(ge=1, le=5)
+    message: Optional[str] = None
+    context: Optional[str] = None  # e.g., "dashboard", "reading"
+    reading_id: Optional[str] = None
+
+
 # ---------- Helpers ----------
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -629,6 +636,41 @@ async def poll_session(session_id: str, user: dict = Depends(current_user)):
             {"$set": {"is_premium": True}},
         )
     return {"payment_status": payment_status, "status": status}
+
+
+# ---------- Feedback (Beta) ----------
+@api.post("/feedback")
+async def submit_feedback(req: FeedbackReq, user: dict = Depends(current_user)):
+    doc = {
+        "feedback_id": f"fb_{uuid.uuid4().hex[:12]}",
+        "user_id": user["user_id"],
+        "email": user.get("email"),
+        "name": user.get("name"),
+        "rating": req.rating,
+        "message": (req.message or "").strip(),
+        "context": req.context,
+        "reading_id": req.reading_id,
+        "created_at": now_utc(),
+    }
+    await db.feedback.insert_one(doc)
+    doc.pop("_id", None)
+    return {"ok": True, "feedback_id": doc["feedback_id"]}
+
+
+@api.get("/feedback/all")
+async def list_feedback(admin_key: Optional[str] = Header(None, alias="X-Admin-Key")):
+    expected = os.environ.get("ADMIN_KEY")
+    if not expected or admin_key != expected:
+        raise HTTPException(401, "Admin key required")
+    cursor = db.feedback.find({}, {"_id": 0}).sort("created_at", -1).limit(500)
+    items = await cursor.to_list(500)
+    avg = await db.feedback.aggregate([
+        {"$group": {"_id": None, "avg": {"$avg": "$rating"}, "count": {"$sum": 1}}}
+    ]).to_list(1)
+    summary = {"count": 0, "avg_rating": None}
+    if avg:
+        summary = {"count": avg[0]["count"], "avg_rating": round(avg[0]["avg"], 2)}
+    return {"summary": summary, "items": items}
 
 
 # ---------- Health ----------
