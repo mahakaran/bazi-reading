@@ -38,16 +38,17 @@ function parseSections(text: string): Section[] {
 }
 
 const SECTION_ICONS: Record<string, string> = {
-  "Overall Energetic Profile": "sparkles-outline",
-  "Five Elements Interpretation": "leaf-outline",
-  "Personality Pattern": "person-outline",
-  "Strengths": "flash-outline",
-  "Growth Challenges": "trending-up-outline",
-  "Career and Money Themes": "briefcase-outline",
-  "Relationship Style": "heart-outline",
-  "Life Phase Themes": "time-outline",
-  "I Ching Guidance": "compass-outline",
-  "Practical Reflection Questions": "help-circle-outline",
+  // New deep-reading sections
+  "Opening Core Pattern": "sparkles-outline",
+  "Deeper Structural Reading": "layers-outline",
+  "Personality and Inner World": "person-outline",
+  "Family and Early Roots": "git-branch-outline",
+  "Career and Work Style": "briefcase-outline",
+  "Relationships and Intimacy": "heart-outline",
+  "Health and Energy": "leaf-outline",
+  "Current or Upcoming Year Theme": "calendar-outline",
+  "I Ching-Inspired Guidance": "compass-outline",
+  "Closing Synthesis": "moon-outline",
   "Disclaimer": "information-circle-outline",
   // Compatibility sections
   "Elemental Harmony": "leaf-outline",
